@@ -8,6 +8,7 @@ var io = require("socket.io")(server);
 //var allusers2 = [];
 
 var allusers = {};
+var allstickers = {};
 
 io.on("connection", function(socket){
     console.log("connect");
@@ -17,6 +18,12 @@ io.on("connection", function(socket){
 //    socket.emit("yourid", socket.id);
     
 //    io.emit("user joined", allusers);
+    
+    socket.on('stick', function(data){
+        allstickers[this.myRoom].push(data);
+        
+        io.to(this.myRoom).emit("newsticker", allstickers[this.myRoom]);
+    })
     
     socket.on("joinroom", function(data){
         console.log(data);
@@ -28,10 +35,15 @@ io.on("connection", function(socket){
         if(!allusers[data]){
             allusers[data] = [];
         }
+            
+        if(!allstickers[data]){
+            allstickers[data] = [];
+        }
         
         allusers[data].push(socket.id);
         io.to(data).emit("userjoined", allusers[data]);
-        
+        io.to(data).emit("newsticker", allstickers[data]);
+            
   /*      if(data == "room1"){
             
             allusers1.push(socket.id);
@@ -54,9 +66,11 @@ io.on("connection", function(socket){
         allusers.splice(index, 1);
         io.emit("user joined", allusers);*/
         
-        var index = allusers[this.myRoom].indexOf(socket.id);
-        allusers[this.myRoom].splice(index, 1);
-        io.to(this.myRoom).emit("userjoined", allusers[this.myRoom]);
+        if(this.myRoom){
+            var index = allusers[this.myRoom].indexOf(socket.id);
+            allusers[this.myRoom].splice(index, 1);
+            io.to(this.myRoom).emit("userjoined", allusers[this.myRoom]);
+        }
     })
 })
 
